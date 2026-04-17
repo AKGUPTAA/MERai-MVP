@@ -1,8 +1,8 @@
 import React from 'react';
-import { UploadCloud, CheckCircle, BrainCircuit, MessageSquareText, FileText } from 'lucide-react';
+import { UploadCloud, CheckCircle, BrainCircuit, MessageSquareText, FileText, Settings } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function Sidebar({ activeTab, setActiveTab, isUploaded }) {
+export default function Sidebar({ activeTab, setActiveTab, isUploaded, onOpenSettings }) {
   const navItems = [
     { id: 'upload', label: 'Upload Data', icon: UploadCloud, always: true },
     { id: 'readiness', label: 'Handover Readiness', icon: CheckCircle, always: false },
@@ -50,13 +50,23 @@ export default function Sidebar({ activeTab, setActiveTab, isUploaded }) {
           <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex items-start gap-3">
             <FileText className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="flex flex-col text-xs">
-              <span className="text-slate-200 font-medium">Meridian EPC</span>
-              <span className="text-slate-500 truncate">Project Closeout</span>
-              <span className="text-blue-400 mt-1">4 Files Analyzed</span>
+              <span className="text-slate-200 font-medium">Paradip Green H2</span>
+              <span className="text-slate-500 truncate">Phase 1 Transcripts</span>
+              <span className="text-blue-400 mt-1">Files Indexed</span>
             </div>
           </div>
         </div>
       )}
+
+      <div className="w-full px-4 mb-4">
+        <button 
+          onClick={onOpenSettings}
+          className="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-colors w-full rounded-xl hover:bg-slate-800 text-sm font-medium"
+        >
+          <Settings className="w-4 h-4" />
+          API Settings
+        </button>
+      </div>
     </aside>
   );
 }

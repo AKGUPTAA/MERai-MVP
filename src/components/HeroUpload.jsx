@@ -1,11 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { UploadCloud, File, Loader2, ShieldCheck, Zap } from 'lucide-react';
 
-export default function HeroUpload({ onUploadComplete }) {
+export default function HeroUpload({ onUploadComplete, setDocumentContext }) {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const fileInputRef = useRef(null);
 
-  const handleUpload = () => {
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type === "text/plain") {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setDocumentContext(event.target.result);
+        simulateUpload();
+      };
+      reader.readAsText(file);
+    } else {
+      // For MVP just store the name if not text
+      setDocumentContext(`File Name: ${file.name}\n(Binary file not parsed in MVP)`);
+      simulateUpload();
+    }
+  };
+
+  const simulateUpload = () => {
     setIsUploading(true);
     let currentProgress = 0;
     const interval = setInterval(() => {
@@ -36,10 +55,17 @@ export default function HeroUpload({ onUploadComplete }) {
       </div>
 
       <div className="z-10 w-full max-w-xl bg-white rounded-2xl shadow-xl border border-slate-200 p-8 relative overflow-hidden">
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          onChange={handleFileChange} 
+          accept=".txt" 
+        />
         {!isUploading ? (
           <div 
             className="border-2 border-dashed border-slate-300 rounded-xl p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 hover:border-blue-400 transition-all group"
-            onClick={handleUpload}
+            onClick={() => fileInputRef.current.click()}
           >
             <div className="bg-blue-50 p-5 rounded-full mb-6 group-hover:scale-110 transition-transform">
               <UploadCloud className="w-10 h-10 text-blue-600" />

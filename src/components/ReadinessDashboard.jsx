@@ -5,14 +5,14 @@ import { AlertCircle, CheckCircle2, XCircle, Clock, FileWarning, ArrowRight } fr
 
 export default function ReadinessDashboard() {
   const missingFiles = [
-    { name: "Piping IS0 Test Logs", impact: "High", owner: "QA Team" },
-    { name: "Vendor QA/QC Dossier (Pump A)", impact: "High", owner: "Procurement" },
-    { name: "As-Built Drawings Rev 3", impact: "Medium", owner: "Engineering" }
+    { name: "Electrolyser Foundation Calcs Rev 2", impact: "High", owner: "Ramesh Nair" },
+    { name: "H2 Storage Area Safety Review", impact: "High", owner: "Anil Joshi" },
+    { name: "Vessel Material PO Change Order", impact: "Medium", owner: "Sanjay Kulkarni" }
   ];
 
   const actionItems = [
-    { title: "Resolve Contradiction in Spec", desc: "Transcript says Duplex 2205 approved, Minutes note pending.", due: "Today" },
-    { title: "Obtain Final Client Sign-off", desc: "Section 4 HSE compliance pending.", due: "Tomorrow" }
+    { title: "Resolve Water Treatment Boundary Scope", desc: "FEED Rev 2 shows Meridian scope, Licensor insists ThyssenKrupp. Escalate to PM.", due: "Today" },
+    { title: "Confirm 100MW Configuration Note", desc: "Procurement needs formal memo dated Mar 19 attached to file.", due: "Tomorrow" }
   ];
 
   return (

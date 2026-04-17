@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, FileText, Search } from 'lucide-react';
+import { Send, Bot, User, FileText, Search, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
+import OpenAI from 'openai';
 
-export default function ProjectMemory() {
+export default function ProjectMemory({ apiKey, documentContext }) {
   const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'ai',
-      text: "Hello. I've indexed your Meridian Closeout files. You can ask me anything about past decisions, revisions, approvals, or outstanding deliverables."
+      text: "Hello. I've indexed your uploaded document. You can ask me anything about past decisions, revisions, approvals, or outstanding deliverables."
     }
   ]);
   const [input, setInput] = useState('');
@@ -18,45 +19,67 @@ export default function ProjectMemory() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !apiKey) return;
 
     const userMessage = { id: Date.now(), sender: 'user', text: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
-    // Mock AI response
-    setTimeout(() => {
-      let aiResponseText = "I found this in the recent engineering review. The water treatment package scope is currently deferred due to a contradiction between FEED Rev 2 and Licensor expectations.";
-      
-      const lowerInput = userMessage.text.toLowerCase();
-      
-      if (lowerInput.includes("duplex 2205") || lowerInput.includes("material")) {
-        aiResponseText = "According to the April 2nd Transcript, Duplex 2205 was approved for vessels V-2104 through 2106. Dr. Klaus Werner recommended it over SS316L due to chloride stress cracking concerns in the port environment. Note: This adds roughly 1.5 crore in material costs.";
-      } else if (lowerInput.includes("100 mw") || lowerInput.includes("electrolyser") || lowerInput.includes("foundation")) {
-        aiResponseText = "The foundation loading was increased by 18% because the project confirmed the 100 MW stack configuration. While Arjun Reddy missed the formal note, Kavita Desai confirmed it was communicated via email on March 19th.";
-      } else if (lowerInput.includes("storage") || lowerInput.includes("layout")) {
-        aiResponseText = "The hydrogen storage layout remains TBD. Option B (split layout) is safer for fire propagation but requires 400m of high-pressure piping. Anil Joshi is expediting a review from the port safety officer by next Thursday.";
-      }
+    try {
+      const openai = new OpenAI({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true,
+      });
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: `You are an expert EPC Project Manager AI for Meridian Projects. 
+          Respond concisely and accurately based ONLY on the following document context. 
+          Do not hallucinate. If the answer is not in the text, say 'I cannot find this in the uploaded documents.'
+          
+          Document Context provided by user upload: 
+          ${documentContext || "(No text content found in uploaded document)"}` },
+          ...messages.filter(m => m.id !== 1).map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text })),
+          { role: "user", content: input }
+        ],
+        temperature: 0.1,
+      });
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         sender: 'ai',
-        text: aiResponseText,
-        citations: ["Apr 2 Transcript", "19 March Email"].slice(0, Math.floor(Math.random() * 2) + 1)
+        text: response.choices[0].message.content,
+        citations: documentContext ? ["Uploaded File"] : []
       }]);
+    } catch (error) {
+      console.error(error);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: "API Error: Unable to reach OpenAI. Please check that you have entered a valid API Key in the Settings menu.",
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto p-6 animate-in fade-in duration-500">
       <header className="mb-6 flex-shrink-0">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Project Memory</h1>
-        <p className="text-slate-500">Ask natural questions, get sourced answers directly from your documents.</p>
+        <p className="text-slate-500">Ask natural questions, get sourced answers directly from your uploaded documents via OpenAI.</p>
       </header>
+
+      {!apiKey && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm">
+          <AlertCircle className="w-5 h-5 flex-shrink-0"/>
+          <p className="text-sm font-medium">Please add your OpenAI API Key in the Settings (Sidebar) to enable the chat model.</p>
+        </div>
+      )}
 
       <div className="flex-1 overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col relative">
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -73,7 +96,7 @@ export default function ProjectMemory() {
                 )}>
                   {msg.text}
                 </div>
-                {msg.citations && (
+                {msg.citations && msg.citations.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-1">
                     {msg.citations.map((cite, i) => (
                       <span key={i} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded cursor-pointer hover:bg-slate-50">
@@ -107,20 +130,21 @@ export default function ProjectMemory() {
               type="text" 
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder="e.g. Why was Revision 2 chosen instead of 1?"
-              className="w-full pl-12 pr-16 py-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm text-slate-800 placeholder-slate-400 text-[15px]"
+              placeholder={apiKey ? "e.g. Why was Revision 2 chosen instead of 1?" : "API Key required..."}
+              disabled={!apiKey || isTyping}
+              className="w-full pl-12 pr-16 py-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm text-slate-800 placeholder-slate-400 text-[15px] disabled:opacity-50 disabled:bg-slate-100"
             />
             <button 
               type="submit"
-              disabled={!input.trim() || isTyping}
+              disabled={!input.trim() || isTyping || !apiKey}
               className="absolute right-3 bg-blue-600 text-white p-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Send className="w-4 h-4" />
             </button>
           </form>
           <div className="text-center mt-3">
-              <span className="text-[11px] text-slate-400 tracking-wide">MERai Memory Agent can make mistakes. Verify critical facts automatically via Handover module.</span>
-            </div>
+              <span className="text-[11px] text-slate-400 tracking-wide">{!documentContext ? "Upload a text file on the main page to populate the document context." : "Document context loaded."} MERai Memory Agent utilizes OpenAI.</span>
+          </div>
         </div>
       </div>
     </div>
