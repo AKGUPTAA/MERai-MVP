@@ -1,5 +1,7 @@
 # MERai
 
+The name **MERai** is a combination of two words: **MER** and **AI**. MER stands for the company name, Meridian, and AI stands for Artificial Intelligence. It playfully resembles the Japanese word *Mirai*, which means future, highlighting a progress and goal-driven approach.
+
 **MERai** is an AI-powered copilot designed to solve the operational chaos of EPC (Engineering, Procurement, and Construction) project closeouts. 
 
 ## The Idea Behind MERai
