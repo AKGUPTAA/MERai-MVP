@@ -28,16 +28,17 @@ Open `http://localhost:5173` in your browser.
 
 ## How It Works
 
-### 1. Upload Files
-- Click the upload zone and select one or more `.txt` files (meeting transcripts, reports, notes).
+### 1. Multi-Format File Upload
+- Click the upload zone and select one or more `.txt`, `.pdf`, or `.docx` files (meeting transcripts, reports, notes).
 - Click **"Analyze with MERai"** to process.
-- MERai sends your documents to OpenAI and extracts structured intelligence in real-time.
+- MERai sends your documents to Gemini and extracts structured intelligence in real-time.
 
 ### 2. Handover Readiness
 AI-generated dashboard showing:
 - **Readiness Score** (0–100%)
 - **Missing Documents** with owners and impact levels
 - **Unresolved Items** count
+- **Contradictions Banner**: Dynamically surfaces disagreements across multiple documents.
 - **Recommended Actions** with urgency
 
 ### 3. Decision Intelligence
@@ -46,6 +47,7 @@ AI-extracted feed of:
 - **Pending** items
 - **Contradictions** between documents
 - **Risks** with owners and impact
+- **Approval Chains**: Visual breakdown showing specifically who *Decided*, *Agreed*, *Owned*, and *Must Be Notified* for total accountability.
 
 ### 4. Project Memory (Q&A)
 Chat interface where you ask natural questions like:
@@ -53,7 +55,7 @@ Chat interface where you ask natural questions like:
 - *"What is still unresolved?"*
 - *"What changed after the March review?"*
 
-MERai answers using only your uploaded documents.
+MERai operates in **STRICT Mode**: it answers using only your uploaded documents, cites sources, and explicitly refuses to hallucinate facts not in evidence. Includes pre-loaded demo questions for easy testing.
 
 ## Tech Stack
 
@@ -61,9 +63,10 @@ MERai answers using only your uploaded documents.
 |-------|-----------|
 | Framework | React 18 + Vite |
 | Styling | Tailwind CSS 3 |
+| Document Parsing | pdfjs-dist (PDF), mammoth (DOCX) |
 | Icons | Lucide React |
 | Charts | react-circular-progressbar |
-| AI | Google Gemini 1.5 Flash |
+| AI | Google Gemini 2.5 Flash |
 
 ## Project Structure
 
@@ -71,14 +74,14 @@ MERai answers using only your uploaded documents.
 src/
 ├── App.jsx                      # Main app with state management
 ├── services/
-│   └── openai.js                # Shared OpenAI API service
+│   └── openai.js                # Shared Gemini API service (using STRICT mode)
 ├── components/
-│   ├── Sidebar.jsx              # Navigation sidebar
+│   ├── Sidebar.jsx              # Navigation sidebar with dynamic file status
 │   ├── SettingsModal.jsx        # API key input modal
-│   ├── HeroUpload.jsx           # Multi-file upload + processing
-│   ├── ReadinessDashboard.jsx   # Dynamic readiness dashboard
-│   ├── DecisionIntelligence.jsx # Dynamic decision extraction
-│   └── ProjectMemory.jsx        # AI chat interface
+│   ├── HeroUpload.jsx           # Multi-file upload + native PDF/DOCX processing
+│   ├── ReadinessDashboard.jsx   # Dynamic readiness dashboard with Contradictions banner
+│   ├── DecisionIntelligence.jsx # Dynamic decision extraction and Approval Chain visual
+│   └── ProjectMemory.jsx        # AI chat interface with strict citation controls
 ```
 
 ## Requirements

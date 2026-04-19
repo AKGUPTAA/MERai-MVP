@@ -3,6 +3,15 @@ import { Send, Bot, User, FileText, Search, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 import { chatWithMemory } from '../services/openai';
 
+const DEMO_QUESTIONS = [
+  "What decisions were made in this meeting?",
+  "Who approved the material specification change?",
+  "What items are still unresolved or pending?",
+  "Are there any contradictions between documents?",
+  "What is the current status of the handover dossier?",
+  "Who needs to be notified about recent changes?",
+];
+
 export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
   const [messages, setMessages] = useState([
     {
@@ -19,13 +28,11 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || !apiKey) return;
+  const sendMessage = async (text) => {
+    if (!text.trim() || !apiKey) return;
 
-    const userMessage = { id: Date.now(), sender: 'user', text: input };
+    const userMessage = { id: Date.now(), sender: 'user', text };
     setMessages(prev => [...prev, userMessage]);
-    const currentInput = input;
     setInput('');
     setIsTyping(true);
 
@@ -34,7 +41,7 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
         apiKey,
         documentContext,
         messages.filter(m => m.id !== 1),
-        currentInput
+        text
       );
 
       setMessages(prev => [...prev, {
@@ -48,12 +55,19 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         sender: 'ai',
-        text: "API Error: Unable to reach OpenAI. Please check that you have entered a valid API Key in the Settings menu.",
+        text: "API Error: Unable to reach Gemini. Please check that you have entered a valid API Key in the Settings menu.",
       }]);
     } finally {
       setIsTyping(false);
     }
   };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    sendMessage(input);
+  };
+
+  const hasConversation = messages.length === 1;
 
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto p-6 animate-in fade-in duration-500">
@@ -65,11 +79,11 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
       {!apiKey && (
         <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <p className="text-sm font-medium">Please add your Gemini API Key in the Settings (Sidebar) to enable the chat model.</p>
+          <p className="text-sm font-medium">Please add your Gemini API Key in Settings to enable the chat model.</p>
         </div>
       )}
 
-      <div className="flex-1 overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col relative">
+      <div className="flex-1 overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col">
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.map(msg => (
             <div key={msg.id} className={clsx("flex gap-4 max-w-3xl", msg.sender === 'user' ? "ml-auto flex-row-reverse" : "")}>
@@ -87,7 +101,7 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
                 {msg.citations && msg.citations.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-1">
                     {msg.citations.map((cite, i) => (
-                      <span key={i} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded cursor-pointer hover:bg-slate-50">
+                      <span key={i} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded hover:bg-slate-50 cursor-default">
                         <FileText className="w-3 h-3 text-blue-500" /> {cite}
                       </span>
                     ))}
@@ -96,12 +110,13 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
               </div>
             </div>
           ))}
+
           {isTyping && (
             <div className="flex gap-4 max-w-3xl">
               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
                 <Bot className="w-5 h-5 text-white" />
               </div>
-              <div className="px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm flex items-center gap-1 text-slate-400">
+              <div className="px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm flex items-center gap-1">
                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-.15s]"></span>
                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-.3s]"></span>
@@ -111,8 +126,27 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
           <div ref={bottomRef} />
         </div>
 
+        {/* Demo questions — shown only before first user message */}
+        {hasConversation && apiKey && (
+          <div className="px-6 pb-4">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Try asking</p>
+            <div className="flex flex-wrap gap-2">
+              {DEMO_QUESTIONS.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendMessage(q)}
+                  disabled={isTyping}
+                  className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="p-4 bg-white border-t border-slate-100">
-          <form onSubmit={handleSend} className="relative flex items-center">
+          <form onSubmit={handleSubmit} className="relative flex items-center">
             <Search className="w-5 h-5 absolute left-4 text-slate-400" />
             <input
               type="text"
@@ -132,7 +166,7 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
           </form>
           <div className="text-center mt-3">
             <span className="text-[11px] text-slate-400 tracking-wide">
-              {!documentContext ? "Upload files on the main page to populate document context." : `${fileNames?.length || 0} file(s) loaded into memory.`} Powered by Gemini.
+              {!documentContext ? "Upload files on the main page to populate document context." : `${fileNames?.length || 0} file(s) indexed.`} Powered by Gemini.
             </span>
           </div>
         </div>

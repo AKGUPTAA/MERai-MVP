@@ -1,7 +1,7 @@
 import React from 'react';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { AlertCircle, CheckCircle2, XCircle, Clock, FileWarning, ArrowRight, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, XCircle, Clock, FileWarning, Loader2, AlertTriangle } from 'lucide-react';
 
 export default function ReadinessDashboard({ data }) {
   if (!data) {
@@ -21,7 +21,7 @@ export default function ReadinessDashboard({ data }) {
   const actionItems = data.actions ?? [];
   const unresolvedCount = data.unresolvedItems ?? 0;
   const validatedCount = data.validatedItems ?? 0;
-  const complianceGaps = data.complianceGaps ?? 0;
+  const contradictions = data.contradictions ?? [];
 
   const statusColor = status === 'On Track'
     ? 'bg-emerald-100 text-emerald-700'
@@ -31,12 +31,32 @@ export default function ReadinessDashboard({ data }) {
 
   return (
     <div className="p-10 max-w-6xl mx-auto animate-in fade-in duration-500">
-      <header className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Handover Readiness</h1>
-          <p className="text-slate-500">AI-generated assessment from uploaded documents</p>
-        </div>
+      <header className="mb-6">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Handover Readiness</h1>
+        <p className="text-slate-500">AI-generated assessment from uploaded documents</p>
       </header>
+
+      {/* Contradictions banner — shown prominently if any exist */}
+      {contradictions.length > 0 && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <h3 className="text-base font-bold text-amber-800">{contradictions.length} Contradiction{contradictions.length > 1 ? 's' : ''} Detected</h3>
+            <span className="text-xs font-semibold text-amber-600 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md uppercase tracking-wide ml-auto">Needs Resolution</span>
+          </div>
+          <div className="space-y-2">
+            {contradictions.map((c, idx) => (
+              <div key={idx} className="flex gap-3 bg-white border border-amber-100 rounded-xl p-3">
+                <div className="w-1 bg-amber-400 rounded-full flex-shrink-0"></div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{c.title}</p>
+                  <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{c.detail}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Score Card */}
@@ -60,10 +80,10 @@ export default function ReadinessDashboard({ data }) {
           </div>
         </div>
 
-        {/* Status Summary */}
+        {/* Summary cards */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 col-span-2 flex flex-col justify-between">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Summary</h3>
-          <div className="grid grid-cols-3 gap-4 mb-4 flex-1 items-center">
+          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Summary</h3>
+          <div className="grid grid-cols-3 gap-4">
             <div className="p-4 rounded-xl bg-red-50 border border-red-100 flex flex-col gap-2">
               <FileWarning className="w-6 h-6 text-red-500" />
               <span className="text-3xl font-bold text-red-600">{missingFiles.length}</span>
@@ -86,11 +106,9 @@ export default function ReadinessDashboard({ data }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Missing Documents */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-slate-900">Missing Documents</h3>
-          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-5">Missing Documents</h3>
           {missingFiles.length === 0 ? (
-            <p className="text-slate-400 text-sm py-4 text-center">No missing documents identified.</p>
+            <p className="text-slate-400 text-sm py-6 text-center">No missing documents identified.</p>
           ) : (
             <ul className="space-y-3">
               {missingFiles.map((file, idx) => (
@@ -102,31 +120,28 @@ export default function ReadinessDashboard({ data }) {
                       <p className="text-xs text-slate-500">Owner: {file.owner}</p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-1 rounded">{file.impact}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">{file.impact}</span>
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        {/* Next Actions */}
+        {/* Recommended Actions */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-slate-900">Recommended Actions</h3>
-          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-5">Recommended Actions</h3>
           {actionItems.length === 0 ? (
-            <p className="text-slate-400 text-sm py-4 text-center">No actions identified.</p>
+            <p className="text-slate-400 text-sm py-6 text-center">No actions identified.</p>
           ) : (
             <ul className="space-y-4">
               {actionItems.map((action, idx) => (
                 <li key={idx} className="flex gap-4 p-4 rounded-xl border border-slate-200 border-l-4 border-l-blue-500">
-                  <div className="mt-1">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-1">
                       <h4 className="text-sm font-semibold text-slate-900">{action.title}</h4>
-                      <span className="flex items-center gap-1 text-xs font-medium text-slate-500"><Clock className="w-3 h-3" /> {action.due}</span>
+                      <span className="flex items-center gap-1 text-xs font-medium text-slate-500 ml-2 flex-shrink-0">
+                        <Clock className="w-3 h-3" /> {action.due}
+                      </span>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">{action.desc}</p>
                   </div>

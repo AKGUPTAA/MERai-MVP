@@ -20,23 +20,24 @@ export async function analyzeReadiness(apiKey, documentContext) {
   const prompt = `You are an expert EPC project closeout analyst. Analyze ONLY the provided project documents below.
 
 CRITICAL RULES:
-- Count ONLY items that are explicitly mentioned or strongly implied in the documents.
-- Do NOT invent, assume, or add items that are not in the text.
-- Do NOT use "sensible defaults" — if the text does not say it, do not include it.
-- unresolvedItems = the count of open/pending/TBD/unconfirmed action points you found in the text.
-- validatedItems = the count of items explicitly confirmed, approved, or signed-off in the text.
-- missingDocuments = documents explicitly stated as missing, not submitted, not available, or requested but not yet provided.
-- score = your honest assessment of readiness (0=nothing done, 100=everything complete and signed off).
+- Count ONLY items explicitly mentioned or strongly implied in the documents.
+- Do NOT invent, assume, or pad numbers.
+- unresolvedItems = count of open/pending/TBD/unconfirmed items in the text.
+- validatedItems = count of items explicitly confirmed, approved, or signed-off.
+- missingDocuments = documents explicitly stated as missing, not submitted, or requested but not provided.
+- contradictions = list of cases where two sources clearly disagree on the same fact.
+- score = honest 0-100 readiness assessment.
 
-Return ONLY valid JSON (no markdown, no code blocks, just raw JSON) with this exact structure:
+Return ONLY valid JSON (no markdown, no code blocks, just raw JSON):
 {
   "score": <number 0-100>,
   "status": "<On Track | At Risk | Critical>",
-  "missingDocuments": [{"name": "<exact doc name from text>", "impact": "<High|Medium|Low>", "owner": "<person or team from text>"}],
-  "unresolvedItems": <count only items explicitly open in the text>,
-  "validatedItems": <count only items explicitly confirmed in the text>,
-  "actions": [{"title": "<action from text>", "desc": "<exactly what the text says needs to happen>", "due": "<urgency mentioned in text, or 'Not specified'>"}],
-  "complianceGaps": <number explicitly mentioned, or 0 if not stated>
+  "missingDocuments": [{"name": "<exact doc name>", "impact": "<High|Medium|Low>", "owner": "<person or team>"}],
+  "unresolvedItems": <number>,
+  "validatedItems": <number>,
+  "actions": [{"title": "<action>", "desc": "<what needs to happen>", "due": "<urgency>"}],
+  "complianceGaps": <number>,
+  "contradictions": [{"title": "<short label>", "detail": "<what the contradiction is>"}]
 }
 
 Project Documents:
@@ -49,8 +50,8 @@ ${documentContext}`;
 }
 
 /**
- * Extract decisions, contradictions, pending items, and risks from documents.
- * STRICT mode: only extracts items with clear evidence in the text.
+ * Extract decisions with full approval chains.
+ * STRICT mode: only items with clear evidence in the text.
  */
 export async function analyzeDecisions(apiKey, documentContext) {
   const model = getModel(apiKey);
@@ -58,31 +59,36 @@ export async function analyzeDecisions(apiKey, documentContext) {
   const prompt = `You are an expert EPC decision tracker. Analyze ONLY the provided project documents.
 
 CRITICAL RULES:
-- Extract ONLY decisions, contradictions, and risks that are explicitly stated in the text.
-- Do NOT invent items. If something is not clearly in the text, do not include it.
-- Quote or closely paraphrase the actual source when writing descriptions.
-- For contradictions: only flag them when two documents or speakers clearly disagree on the same point.
-- For dates: only use dates explicitly mentioned. Otherwise use "Not specified".
+- Extract ONLY decisions/contradictions/risks that are explicitly in the text.
+- Do NOT invent items. No hallucination.
+- For approval chain fields: only fill in names/roles explicitly stated in the text.
+- If a field has no clear evidence in the text, use "Not specified" or an empty array.
+- For dates: use dates from the text only.
 
-Return ONLY valid JSON (no markdown, no code blocks, just raw JSON):
+Return ONLY valid JSON (no markdown, no code blocks):
 {
   "decisions": [
     {
       "id": <number>,
-      "title": "<short title of the decision or issue>",
+      "title": "<short title>",
       "status": "<Approved | Pending | Contradiction | Risk>",
       "description": "<what the text actually says>",
-      "impact": "<impact as stated or clearly implied in text>",
-      "owner": "<person or role named in text>",
-      "date": "<date from text or 'Not specified'>"
+      "impact": "<impact stated or clearly implied in text>",
+      "date": "<date from text or 'Not specified'>",
+      "chain": {
+        "decidedBy": "<person/role who made the decision, from text>",
+        "agreedBy": ["<person/role who agreed, from text>"],
+        "actionOwner": "<person/role assigned the action, from text>",
+        "shouldNotify": ["<person/role who should be informed but may not have been, inferred from text>"]
+      }
     }
   ]
 }
 
 Classify as:
-- Approved: explicitly stated as approved, confirmed, or agreed
-- Pending: stated as open, under discussion, TBD, to be confirmed
-- Contradiction: two sources in the documents disagree on the same fact
+- Approved: explicitly agreed by all parties
+- Pending: open, TBD, under discussion, to be confirmed
+- Contradiction: two sources in documents disagree on same fact
 - Risk: explicit risk, delay, cost impact, or escalation mentioned
 
 Project Documents:
@@ -109,14 +115,12 @@ export async function chatWithMemory(apiKey, documentContext, chatHistory, userM
 
 STRICT RULES:
 - Answer based ONLY on what is written in the document context below.
-- If the answer is not in the documents, say exactly: "I could not find this information in the uploaded documents."
-- Never guess, infer, or hallucinate facts not present in the text.
-- Cite the specific document, person, or date from the text when answering.
+- If the answer is not in the documents, say: "I could not find this in the uploaded documents."
+- Never guess or hallucinate. Cite specific people, dates, and document references when available.
 - Be concise and professional.
 
 Document Context:
 ${documentContext || '(No documents uploaded yet)'}
-
 ---`;
 
   const chat = model.startChat({ history });

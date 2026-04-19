@@ -21,63 +21,48 @@ Chose React + Vite + Tailwind CSS over Next.js or Streamlit. Reasoning:
 - Vite gives instant hot-reload for rapid iteration.
 - Tailwind lets you build premium UI fast without writing custom CSS files.
 - No need for SSR or backend routing — this is a client-side prototype.
-- OpenAI calls are made directly from the browser via the official SDK.
+- Native filesystem parsing via `pdfjs-dist` and `mammoth` keeps all data client-side before going to the LLM.
 
-## 4. Reversals and Changes
+## 4. Testing Against Real Needs (Gap Analysis)
 
-### v1: Static mock data
-The first version used hardcoded arrays for decisions and readiness scores. This was fine for a visual demo but fell apart the moment you asked "what if I upload a different file?"
+After initially testing with mock files, I ran a deep gap analysis against a set of actual crisis documents (a CEO email complaining of late handovers, a VP's email calling out verbal decisions not reaching procurement, and an engineer lamenting a deleted Teams channel).
 
-### v2: Fully dynamic
-Rewrote all three modules to be 100% dynamic. On upload, the app now:
-1. Reads every `.txt` file via `FileReader`
-2. Sends the combined text to OpenAI to extract readiness data (JSON)
-3. Sends a second call to extract decisions (JSON)
-4. Both responses populate the dashboard dynamically
-5. The chat module uses the same document context for Q&A
+This revealed that the prototype was generally solving the right *strategic* problems, but had several *functional* gaps:
+- It only parsed TXT files, while Meridian uses DOCX and PDFs.
+- It extracted the overarching decision, but completely missed "accountability" — who was supposed to notify procurement?
+- Contradictions across documents (e.g., an email saying SS316L, a transcript saying Duplex 2205) were not visually loud enough to stop a 22 Lakh INR rework mistake.
 
-This means anyone can clone the repo, upload their own files, and get real results.
+## 5. Iterations and UI Improvements
 
-### Multi-file upload
-Initial version only accepted a single file. Fixed this — you can now select multiple `.txt` files, see them listed, remove individual files, and process them all at once.
+To address the gap analysis findings:
+- **Added PDF & DOCX Support**: Integrated `pdfjs-dist` and `mammoth` into the frontend so users can drop in realistic project files rather than just raw text.
+- **Approval Chains**: Upgraded the Decision Intelligence module. Decisions now expand to reveal an explicit chain: *Decided By → Agreed By → Action Owner → Must Notify*.
+- **Contradiction Banner**: The Readiness Dashboard now has a prominent amber banner solely for calling out cross-document disagreements that require urgent human resolution.
+- **Pre-loaded Chat Suggestions**: To guide first-time users (like the CEO), the Project Memory page now includes demo questions that can be clicked instantly.
 
-## 5. Where AI Helped
+## 6. The Hallucination Problem & "STRICT Mode"
 
-- **Scaffolding**: The entire Vite + React + Tailwind project structure was generated in under a minute.
-- **UI Components**: Sidebar, upload zone, chat interface, settings modal — all generated with proper styling out of the box.
-- **OpenAI Integration**: The service module with structured JSON prompts was generated correctly on the first attempt.
-- **Bug Fixes**: When Tailwind v4 broke the build (PostCSS plugin moved to a separate package), I fed the terminal error back to the AI and it diagnosed and fixed the issue autonomously — uninstalled the broken deps, installed the correct stable version, and updated configs. Took about 30 seconds.
+**Problem**: During testing on the real dataset, the AI claimed there were "33 Unresolved Items" and "8 Missing Documents". In reality, the documents only mentioned 4 unresolved items and 3 missing documents. The AI was literally inventing items to pad the numbers because my original prompt told it to use "sensible defaults."
 
-## 6. Where AI Failed
+**Fix**: I completely rewrote the internal prompts into what I call **STRICT Mode**. 
+- The AI is commanded to extract *only* what is explicitly named or strongly implied in the text.
+- No inferring, no defaults, no padding.
+- For chat queries, if someone asks something not in the text, it explicitly responds: *"I could not find this information in the uploaded documents."*
 
-- **Tailwind Version Mismatch**: The AI initially configured Tailwind v4 syntax (`@tailwindcss/postcss`) but had installed the v3 package. This caused a full build crash. The error was clear in the terminal and the AI fixed it on the second attempt with zero manual intervention from me.
-- **Single-file lock**: The first upload implementation only handled one file. Had to explicitly ask for multi-file support.
+## 7. Migration from OpenAI to Google Gemini
 
-## 7. How Problems Were Caught
+Originally wired to OpenAI's GPT-4o-mini. I migrated the entire service layer to **Google Gemini 2.5 Flash** natively using `@google/generative-ai`.
+- **Why?** It parses long document contexts faster, has an incredibly huge token context window (ideal for 2,000+ page datasets), and is highly precise on classification tasks when in strict mode.
+- **Challenges:** Encountered a `404 not found` error during migration because I used a deprecated model string (`gemini-1.5-flash-latest`). Once identified via terminal logs, the fallback and upgrade to the official stable `gemini-2.5-flash` model resolved it instantly.
 
-- Every change was validated by running `npm run dev` and checking the browser.
-- Build errors showed up immediately in the terminal.
-- The AI caught and fixed its own mistakes when given the error output.
-- Manual effort on my end was minimal — mostly reviewing the output and deciding what to iterate on.
+## 8. Where AI Helped
 
-## 8. What Was Cut
+- **Rapid Refactoring**: Generating the complex PDF/DOCX loaders dynamically inside React.
+- **React Components**: Expanding the decision cards and managing complex UI state (accordions, multi-stage approval visual components) was built safely and accurately.
+- **Debugging**: The AI completely self-diagnosed the Gemini syntax error from the NPM trace.
 
-- **PDF/DOCX parsing**: Browser-side binary parsing is brittle. Scoped to `.txt` for reliability.
-- **Authentication**: No login — drops you straight into the product.
-- **Persistent storage**: No database. State resets on refresh. Fine for a demo.
-- **Streaming responses**: Chat responses arrive all at once, not streamed token-by-token.
+## 9. Reflection
 
-## 9. What Would Be Built Next
+Building a SaaS product isn't about throwing data at an LLM; it's about restricting the LLM to only provide the intelligence the business explicitly requires. Moving from "generative" AI to "extractive" AI (STRICT mode) fundamentally changed the utility of the application from a "cool demo" to a "dependable tool." 
 
-- **Real RAG pipeline**: LangChain or LlamaIndex for chunking and embedding large document sets.
-- **PDF/DOCX support**: Server-side parsing with Python (PyMuPDF, python-docx).
-- **Multi-user + roles**: Project Manager, Client, Licensor each see different views.
-- **ERP integration**: Pull ground-truth data from SAP/Aconex to cross-verify AI findings.
-- **Streaming chat**: Token-by-token response rendering for better UX.
-- **Document versioning**: Track changes across uploaded file revisions.
-
-## 10. Reflection
-
-Speed matters, but what sells a prototype is *specificity*. A generic AI chat is boring. An AI that reads your actual meeting transcript and tells you "the water treatment scope is contradicted between FEED Rev 2 and the Licensor's verbal agreement" — that's a product. 
-
-AI handled 90% of the boilerplate. My job was product thinking — choosing the right modules, structuring the prompts correctly, and making sure every pixel communicated "this is a real product." The hardest part wasn't code. It was deciding what to cut and what to keep.
+The application is now entirely dynamic, format-agnostic, zero-hallucination, and strictly tied to actual project data.
