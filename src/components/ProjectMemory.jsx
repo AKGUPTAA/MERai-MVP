@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, FileText, Search, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
-import OpenAI from 'openai';
+import { chatWithMemory } from '../services/openai';
 
-export default function ProjectMemory({ apiKey, documentContext }) {
+export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
   const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'ai',
-      text: "Hello. I've indexed your uploaded document. You can ask me anything about past decisions, revisions, approvals, or outstanding deliverables."
+      text: "Hello. I've indexed your uploaded documents. Ask me anything — decisions made, who approved what, unresolved items, contradictions, timelines, or any detail from the files."
     }
   ]);
   const [input, setInput] = useState('');
@@ -25,35 +25,23 @@ export default function ProjectMemory({ apiKey, documentContext }) {
 
     const userMessage = { id: Date.now(), sender: 'user', text: input };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsTyping(true);
 
     try {
-      const openai = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true,
-      });
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: `You are an expert EPC Project Manager AI for Meridian Projects. 
-          Respond concisely and accurately based ONLY on the following document context. 
-          Do not hallucinate. If the answer is not in the text, say 'I cannot find this in the uploaded documents.'
-          
-          Document Context provided by user upload: 
-          ${documentContext || "(No text content found in uploaded document)"}` },
-          ...messages.filter(m => m.id !== 1).map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text })),
-          { role: "user", content: input }
-        ],
-        temperature: 0.1,
-      });
+      const aiResponse = await chatWithMemory(
+        apiKey,
+        documentContext,
+        messages.filter(m => m.id !== 1),
+        currentInput
+      );
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         sender: 'ai',
-        text: response.choices[0].message.content,
-        citations: documentContext ? ["Uploaded File"] : []
+        text: aiResponse,
+        citations: fileNames && fileNames.length > 0 ? fileNames : []
       }]);
     } catch (error) {
       console.error(error);
@@ -71,12 +59,12 @@ export default function ProjectMemory({ apiKey, documentContext }) {
     <div className="flex flex-col h-full max-w-5xl mx-auto p-6 animate-in fade-in duration-500">
       <header className="mb-6 flex-shrink-0">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Project Memory</h1>
-        <p className="text-slate-500">Ask natural questions, get sourced answers directly from your uploaded documents via OpenAI.</p>
+        <p className="text-slate-500">Ask natural questions, get sourced answers from your uploaded documents.</p>
       </header>
 
       {!apiKey && (
         <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0"/>
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <p className="text-sm font-medium">Please add your OpenAI API Key in the Settings (Sidebar) to enable the chat model.</p>
         </div>
       )}
@@ -89,9 +77,9 @@ export default function ProjectMemory({ apiKey, documentContext }) {
                 {msg.sender === 'user' ? <User className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-white" />}
               </div>
               <div className={clsx("flex flex-col gap-2", msg.sender === 'user' ? "items-end" : "items-start")}>
-                <div className={clsx("px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm", 
-                  msg.sender === 'user' 
-                    ? "bg-slate-900 text-white rounded-tr-sm" 
+                <div className={clsx("px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm whitespace-pre-wrap",
+                  msg.sender === 'user'
+                    ? "bg-slate-900 text-white rounded-tr-sm"
                     : "bg-slate-50 border border-slate-100 text-slate-800 rounded-tl-sm"
                 )}>
                   {msg.text}
@@ -109,16 +97,16 @@ export default function ProjectMemory({ apiKey, documentContext }) {
             </div>
           ))}
           {isTyping && (
-             <div className="flex gap-4 max-w-3xl">
-               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
-                 <Bot className="w-5 h-5 text-white" />
-               </div>
-               <div className="px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm flex items-center gap-1 text-slate-400">
-                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-.15s]"></span>
-                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-.3s]"></span>
-               </div>
-             </div>
+            <div className="flex gap-4 max-w-3xl">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
+                <Bot className="w-5 h-5 text-white" />
+              </div>
+              <div className="px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm flex items-center gap-1 text-slate-400">
+                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
+                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-.15s]"></span>
+                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-.3s]"></span>
+              </div>
+            </div>
           )}
           <div ref={bottomRef} />
         </div>
@@ -126,15 +114,15 @@ export default function ProjectMemory({ apiKey, documentContext }) {
         <div className="p-4 bg-white border-t border-slate-100">
           <form onSubmit={handleSend} className="relative flex items-center">
             <Search className="w-5 h-5 absolute left-4 text-slate-400" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
-              placeholder={apiKey ? "e.g. Why was Revision 2 chosen instead of 1?" : "API Key required..."}
+              placeholder={apiKey ? "Ask anything about your project files..." : "API Key required..."}
               disabled={!apiKey || isTyping}
               className="w-full pl-12 pr-16 py-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm text-slate-800 placeholder-slate-400 text-[15px] disabled:opacity-50 disabled:bg-slate-100"
             />
-            <button 
+            <button
               type="submit"
               disabled={!input.trim() || isTyping || !apiKey}
               className="absolute right-3 bg-blue-600 text-white p-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -143,7 +131,9 @@ export default function ProjectMemory({ apiKey, documentContext }) {
             </button>
           </form>
           <div className="text-center mt-3">
-              <span className="text-[11px] text-slate-400 tracking-wide">{!documentContext ? "Upload a text file on the main page to populate the document context." : "Document context loaded."} MERai Memory Agent utilizes OpenAI.</span>
+            <span className="text-[11px] text-slate-400 tracking-wide">
+              {!documentContext ? "Upload files on the main page to populate document context." : `${fileNames?.length || 0} file(s) loaded into memory.`} Powered by OpenAI.
+            </span>
           </div>
         </div>
       </div>

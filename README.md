@@ -1,31 +1,91 @@
-# MERai
+# MERai — Turning Chaos into Clarity
 
-The name **MERai** is a combination of two words: **MER** and **AI**. MER stands for the company name, Meridian, and AI stands for Artificial Intelligence. It playfully resembles the Japanese word *Mirai*, which means future, highlighting a progress and goal-driven approach.
-
-**MERai** is an AI-powered copilot designed to solve the operational chaos of EPC (Engineering, Procurement, and Construction) project closeouts. 
-
-## The Idea Behind MERai
-Closing out a large construction or engineering project is notoriously stressful. It involves mountains of documentation, complex handover processes, and the need to verify thousands of pages of contracts, compliance forms, and approvals. 
-
-**MERai** was built to act as your smart assistant throughout this process. It eliminates the manual drudgery of project handovers, transforming messy data into clear actions, automating paperwork, and acting as an instant-recall knowledge base for the entire project lifecycle.
-
-## Core Features Explained
-
-### 📊 Decision Intelligence
-*Making sense of complex data.*
-
-Instead of project managers manually sifting through raw data or complicated spreadsheets to figure out what is on track and what is delayed, Decision Intelligence does the heavy lifting. It acts as a smart dashboard that analyzes project metrics and provides clear, actionable insights. It tells you exactly what needs your attention right now, helping you prioritize tasks and avoid costly delays or penalties.
-
-### 📄 Document Generator
-*Automating the paperwork.*
-
-Creating official handover documents, compliance reports, and readiness forms usually takes days of formatting, copying, and reviewing. The Document Generator automates this entirely. It takes your existing project data and intelligently drafts, organizes, and formats it into ready-to-use professional documents. What used to take days now takes minutes.
-
-### 💬 Project Memory Chat Bot
-*Your project's instant-recall memory.*
-
-Imagine having a team member who remembers every single detail, contract clause, meeting note, and email from a multi-year project. The Project Memory Chat Bot is exactly that. Instead of digging through folders to find a specific PDF, you can simply ask the bot questions in plain English (like, *"What was the agreed penalty for late concrete delivery?"* or *"Are we missing any safety sign-offs for Phase 2?"*). It instantly searches the project's entire history and gives you the exact answer.
+An AI-powered project intelligence copilot for EPC teams. Upload messy project files — meeting transcripts, minutes, reports — and MERai turns them into structured handover readiness assessments, decision tracking, and a searchable project memory.
 
 ---
 
-*This project is currently under development as a functional MVP.*
+## Quick Start
+
+```bash
+# Clone the repo
+git clone https://github.com/AKGUPTAA/MERai-MVP.git
+cd MERai-MVP
+
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+```
+
+Open `http://localhost:5173` in your browser.
+
+## Setup
+
+1. On first launch, a modal will ask for your **OpenAI API Key**.
+2. Paste your key (starts with `sk-...`). It is stored locally in your browser — never sent anywhere except OpenAI.
+3. You can change the key anytime via **API Settings** in the sidebar.
+
+## How It Works
+
+### 1. Upload Files
+- Click the upload zone and select one or more `.txt` files (meeting transcripts, reports, notes).
+- Click **"Analyze with MERai"** to process.
+- MERai sends your documents to OpenAI and extracts structured intelligence in real-time.
+
+### 2. Handover Readiness
+AI-generated dashboard showing:
+- **Readiness Score** (0–100%)
+- **Missing Documents** with owners and impact levels
+- **Unresolved Items** count
+- **Recommended Actions** with urgency
+
+### 3. Decision Intelligence
+AI-extracted feed of:
+- **Approved** decisions
+- **Pending** items
+- **Contradictions** between documents
+- **Risks** with owners and impact
+
+### 4. Project Memory (Q&A)
+Chat interface where you ask natural questions like:
+- *"Who approved Duplex 2205?"*
+- *"What is still unresolved?"*
+- *"What changed after the March review?"*
+
+MERai answers using only your uploaded documents.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | React 18 + Vite |
+| Styling | Tailwind CSS 3 |
+| Icons | Lucide React |
+| Charts | react-circular-progressbar |
+| AI | OpenAI GPT-4o-mini |
+
+## Project Structure
+
+```
+src/
+├── App.jsx                      # Main app with state management
+├── services/
+│   └── openai.js                # Shared OpenAI API service
+├── components/
+│   ├── Sidebar.jsx              # Navigation sidebar
+│   ├── SettingsModal.jsx        # API key input modal
+│   ├── HeroUpload.jsx           # Multi-file upload + processing
+│   ├── ReadinessDashboard.jsx   # Dynamic readiness dashboard
+│   ├── DecisionIntelligence.jsx # Dynamic decision extraction
+│   └── ProjectMemory.jsx        # AI chat interface
+```
+
+## Requirements
+
+- Node.js 18+
+- An OpenAI API key with access to `gpt-4o-mini`
+
+## License
+
+MIT

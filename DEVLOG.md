@@ -1,40 +1,83 @@
-# MERai - Development Log
+# MERai — Development Log
 
 ## 1. Initial Product Direction
-Initially, I considered building a generic document generator. However, I quickly realized that a broad, generic tool wouldn't fully align with all the requirements of the Meridian company. I needed an MVP that solved a specific, expensive problem. EPC project closeouts are notoriously chaotic and cost companies millions in delayed handovers—this felt like the perfect wedge.
-While the CEO saw this as the primary issue, deeper conversations with other employees revealed that the core problem is much deeper and goes back to missing out on important project details.
 
-## 2. Decisions Made
-- **The Concept:** MERai became the final concept because it targets the specific operational bottleneck of unstructured project communication (transcripts, emails, change orders) causing 6-month handover delays. 
-So its not just document generation, it's also about decision intelligence and project memory. 
+The brief was to build a SaaS prototype for Meridian Projects, a mid-large EPC company drowning in document chaos during project closeouts. Their handovers take 6 months longer than they should because decisions live in meeting transcripts, emails, and scattered reports that nobody can trace.
 
-## 3. Reversals & Changes
-- **Backend Architecture:** I initially planned to wire up a real Python backend with an LLM API. I reversed this decision midway. For a prototype demo, latency and prompt tuning are risks. Hardcoding a highly specific, realistic scenario (the Paradip Green Hydrogen Facility) demonstrates the value proposition much more effectively than a generic RAG pipeline running on random text.
-- **The Database:** Cut entirely. Storing data wasn't the goal; demonstrating intelligence was.
+I initially considered a generic dashboard—something like a BI tool with charts. Scrapped that within minutes. A founder doesn't want to see another dashboard. They want to see a *product that solves the problem*.
 
-## 4. Where AI Helped
-- **Fast Scaffolding:** Scaffolded the entire React application and component routing structure in seconds.
-- **UI Generation:** Handled the heavy lifting of the CSS (glassmorphism, smooth animations, Recharts integration) effortlessly.
-- **Data Contextualization:** Instantly parsed a raw meeting transcript about a Hydrogen facility and mapped it perfectly into the UI's Decision Intelligence and Project Memory modules.
+## 2. Why MERai
 
-## 5. Where AI Failed / Hallucinated
-- **Dependency Versioning:** The AI initially hallucinated the setup for TailwindCSS. It tried to use standard PostCSS configurations, failing to recognize that Tailwind v4 had just been released and moved its PostCSS plugin to a completely different package (`@tailwindcss/postcss`).
-- **Build Crash:** This resulted in a broken build and an internal server error on the dev server because the stylesheets couldn't compile.
+MERai exists because the root issue isn't "lack of data" — it's "lack of clarity." The data exists across meeting minutes, transcripts, and emails. Nobody has time to read it all. An AI copilot that ingests the mess and produces structured intelligence is the product.
 
-## 6. How Problems Were Caught
-- The Tailwind error was caught immediately upon spinning up the dev server.
-- **The Fix:** I didn't have to manually dig through StackOverflow. I simply fed the terminal error log back into the AI. The AI instantly realized the v4 compatibility issue, autonomously uninstalled the broken dependencies, downgraded the project to a stable Tailwind v3.4.1 environment, and fixed the configuration files. It required almost zero manual intervention on my part.
+Three modules emerged naturally from the problem:
+- **Handover Readiness** — What's missing, what's blocking closeout?
+- **Decision Intelligence** — What was decided, what's contradicting, what's pending?
+- **Project Memory** — Ask any question, get an answer from the files.
 
-## 7. What Was Cut Due to Time
-- **Real File Parsing:** The drag-and-drop zone visually simulates processing rather than actually chunking the PDFs.
-- **Authentication:** No login walls; the prototype drops you right into the value.
+## 3. Stack Decision
 
-## 8. What Would Be Built Next
-- **Real RAG Pipeline:** Integrating LLM to genuinely parse unstructured EPC dossiers.
-- **ERP Integration:** Hooking into SAP or Aconex for automated ground-truth verification against the LLM's findings.
-- **Multi-user Workflows:** Role-based dashboards for Project Managers, Clients, and Licensors.
+Chose React + Vite + Tailwind CSS over Next.js or Streamlit. Reasoning:
+- Vite gives instant hot-reload for rapid iteration.
+- Tailwind lets you build premium UI fast without writing custom CSS files.
+- No need for SSR or backend routing — this is a client-side prototype.
+- OpenAI calls are made directly from the browser via the official SDK.
 
-## 9. Reflection
-Building MERai reinforced that speed is everything, but polish is what sells the vision. AI eliminates the busywork of boilerplate React, allowing me to spend 90% of my time on product thinking, domain mapping, and UX. The fact that the AI can now hit a build error, read the terminal output, and successfully fix its own environment issues is a massive leverage point for a solo builder. It turns what used to be an hour of debugging into a 30-second automated fix. 
+## 4. Reversals and Changes
 
-The project itself was very simple, but it helped me understand the potential of AI in software development. My goal was straightforward: a document generator that guides and helps the closeout team; a decision intelligence tool that keeps track of what decision was made, when, how, and by whom to avoid any confusion during decision making; and finally, a project memory where all the important details of the project are stored and can be retrieved easily through a chat bot.
+### v1: Static mock data
+The first version used hardcoded arrays for decisions and readiness scores. This was fine for a visual demo but fell apart the moment you asked "what if I upload a different file?"
+
+### v2: Fully dynamic
+Rewrote all three modules to be 100% dynamic. On upload, the app now:
+1. Reads every `.txt` file via `FileReader`
+2. Sends the combined text to OpenAI to extract readiness data (JSON)
+3. Sends a second call to extract decisions (JSON)
+4. Both responses populate the dashboard dynamically
+5. The chat module uses the same document context for Q&A
+
+This means anyone can clone the repo, upload their own files, and get real results.
+
+### Multi-file upload
+Initial version only accepted a single file. Fixed this — you can now select multiple `.txt` files, see them listed, remove individual files, and process them all at once.
+
+## 5. Where AI Helped
+
+- **Scaffolding**: The entire Vite + React + Tailwind project structure was generated in under a minute.
+- **UI Components**: Sidebar, upload zone, chat interface, settings modal — all generated with proper styling out of the box.
+- **OpenAI Integration**: The service module with structured JSON prompts was generated correctly on the first attempt.
+- **Bug Fixes**: When Tailwind v4 broke the build (PostCSS plugin moved to a separate package), I fed the terminal error back to the AI and it diagnosed and fixed the issue autonomously — uninstalled the broken deps, installed the correct stable version, and updated configs. Took about 30 seconds.
+
+## 6. Where AI Failed
+
+- **Tailwind Version Mismatch**: The AI initially configured Tailwind v4 syntax (`@tailwindcss/postcss`) but had installed the v3 package. This caused a full build crash. The error was clear in the terminal and the AI fixed it on the second attempt with zero manual intervention from me.
+- **Single-file lock**: The first upload implementation only handled one file. Had to explicitly ask for multi-file support.
+
+## 7. How Problems Were Caught
+
+- Every change was validated by running `npm run dev` and checking the browser.
+- Build errors showed up immediately in the terminal.
+- The AI caught and fixed its own mistakes when given the error output.
+- Manual effort on my end was minimal — mostly reviewing the output and deciding what to iterate on.
+
+## 8. What Was Cut
+
+- **PDF/DOCX parsing**: Browser-side binary parsing is brittle. Scoped to `.txt` for reliability.
+- **Authentication**: No login — drops you straight into the product.
+- **Persistent storage**: No database. State resets on refresh. Fine for a demo.
+- **Streaming responses**: Chat responses arrive all at once, not streamed token-by-token.
+
+## 9. What Would Be Built Next
+
+- **Real RAG pipeline**: LangChain or LlamaIndex for chunking and embedding large document sets.
+- **PDF/DOCX support**: Server-side parsing with Python (PyMuPDF, python-docx).
+- **Multi-user + roles**: Project Manager, Client, Licensor each see different views.
+- **ERP integration**: Pull ground-truth data from SAP/Aconex to cross-verify AI findings.
+- **Streaming chat**: Token-by-token response rendering for better UX.
+- **Document versioning**: Track changes across uploaded file revisions.
+
+## 10. Reflection
+
+Speed matters, but what sells a prototype is *specificity*. A generic AI chat is boring. An AI that reads your actual meeting transcript and tells you "the water treatment scope is contradicted between FEED Rev 2 and the Licensor's verbal agreement" — that's a product. 
+
+AI handled 90% of the boilerplate. My job was product thinking — choosing the right modules, structuring the prompts correctly, and making sure every pixel communicated "this is a real product." The hardest part wasn't code. It was deciding what to cut and what to keep.

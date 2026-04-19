@@ -2,7 +2,7 @@ import React from 'react';
 import { UploadCloud, CheckCircle, BrainCircuit, MessageSquareText, FileText, Settings } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function Sidebar({ activeTab, setActiveTab, isUploaded, onOpenSettings }) {
+export default function Sidebar({ activeTab, setActiveTab, isUploaded, fileNames, onOpenSettings }) {
   const navItems = [
     { id: 'upload', label: 'Upload Data', icon: UploadCloud, always: true },
     { id: 'readiness', label: 'Handover Readiness', icon: CheckCircle, always: false },
@@ -33,8 +33,8 @@ export default function Sidebar({ activeTab, setActiveTab, isUploaded, onOpenSet
               onClick={() => setActiveTab(item.id)}
               className={clsx(
                 "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left",
-                isActive 
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
+                isActive
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                   : "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
               )}
             >
@@ -45,21 +45,25 @@ export default function Sidebar({ activeTab, setActiveTab, isUploaded, onOpenSet
         })}
       </nav>
 
-      {isUploaded && (
+      {isUploaded && fileNames && fileNames.length > 0 && (
         <div className="px-6 w-full mb-6">
-          <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex items-start gap-3">
-            <FileText className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-            <div className="flex flex-col text-xs">
-              <span className="text-slate-200 font-medium">Paradip Green H2</span>
-              <span className="text-slate-500 truncate">Phase 1 Transcripts</span>
-              <span className="text-blue-400 mt-1">Files Indexed</span>
+          <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mb-3">Indexed Files</p>
+            <div className="space-y-2 max-h-36 overflow-y-auto">
+              {fileNames.map((name, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                  <span className="text-xs text-slate-300 truncate">{name}</span>
+                </div>
+              ))}
             </div>
+            <p className="text-blue-400 text-[11px] mt-3 font-medium">{fileNames.length} file{fileNames.length > 1 ? 's' : ''} analyzed</p>
           </div>
         </div>
       )}
 
       <div className="w-full px-4 mb-4">
-        <button 
+        <button
           onClick={onOpenSettings}
           className="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 transition-colors w-full rounded-xl hover:bg-slate-800 text-sm font-medium"
         >
