@@ -2,12 +2,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * Shared Gemini AI service used by all modules.
- * Uses gemini-1.5-flash for fast, cost-effective analysis.
+ * Uses gemini-2.5-flash — current stable model as of April 2026.
  */
 
 function getModel(apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+  return genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 }
 
 /**
