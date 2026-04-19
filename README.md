@@ -22,8 +22,8 @@ Open `http://localhost:5173` in your browser.
 
 ## Setup
 
-1. On first launch, a modal will ask for your **OpenAI API Key**.
-2. Paste your key (starts with `sk-...`). It is stored locally in your browser — never sent anywhere except OpenAI.
+1. On first launch, a modal will ask for your **Gemini API Key**.
+2. Get a free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). It is stored locally in your browser — never sent anywhere except Google AI.
 3. You can change the key anytime via **API Settings** in the sidebar.
 
 ## How It Works
@@ -63,7 +63,7 @@ MERai answers using only your uploaded documents.
 | Styling | Tailwind CSS 3 |
 | Icons | Lucide React |
 | Charts | react-circular-progressbar |
-| AI | OpenAI GPT-4o-mini |
+| AI | Google Gemini 1.5 Flash |
 
 ## Project Structure
 
@@ -84,7 +84,7 @@ src/
 ## Requirements
 
 - Node.js 18+
-- An OpenAI API key with access to `gpt-4o-mini`
+- A Google Gemini API key (free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey))
 
 ## License
 

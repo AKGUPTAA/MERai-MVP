@@ -1,74 +1,62 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
- * Shared OpenAI service used by all modules.
- * Every function takes apiKey + documentContext so components stay stateless.
+ * Shared Gemini AI service used by all modules.
+ * Uses gemini-1.5-flash for fast, cost-effective analysis.
  */
 
-function getClient(apiKey) {
-  return new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
+function getModel(apiKey) {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 }
 
 /**
  * Analyze uploaded documents and extract structured handover readiness data.
- * Returns: { score, missingDocuments[], unresolvedItems[], actions[], complianceGaps[] }
  */
 export async function analyzeReadiness(apiKey, documentContext) {
-  const client = getClient(apiKey);
-  const res = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    temperature: 0.1,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content: `You are an expert EPC project closeout analyst. Analyze the provided project documents and produce a handover readiness assessment.
+  const model = getModel(apiKey);
 
-Return ONLY valid JSON with this exact structure:
+  const prompt = `You are an expert EPC project closeout analyst. Analyze the provided project documents and produce a handover readiness assessment.
+
+Return ONLY valid JSON (no markdown, no code blocks, just raw JSON) with this exact structure:
 {
   "score": <number 0-100>,
   "status": "<On Track | At Risk | Critical>",
   "missingDocuments": [{"name": "<doc name>", "impact": "<High|Medium|Low>", "owner": "<person or team>"}],
   "unresolvedItems": <number>,
   "validatedItems": <number>,
-  "actions": [{"title": "<action>", "desc": "<details>", "due": "<urgency>"}],
+  "actions": [{"title": "<action>", "desc": "<details>", "due": "<urgency e.g. Today|This Week|ASAP>"}],
   "complianceGaps": <number>
 }
 
-Be thorough. Infer missing documents and unresolved items from context clues in the text (e.g., someone says "I will check", "TBD", "pending", "not sure", "deferred"). If the documents don't contain enough info for a field, provide reasonable defaults.`
-      },
-      {
-        role: 'user',
-        content: `Here are the uploaded project documents:\n\n${documentContext}`
-      }
-    ]
-  });
-  return JSON.parse(res.choices[0].message.content);
+Infer missing documents and unresolved items from context clues (e.g., "I will check", "TBD", "pending", "not sure", "deferred"). If a field cannot be determined, use sensible defaults.
+
+Project Documents:
+${documentContext}`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  // Strip markdown code fences if present
+  const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+  return JSON.parse(cleaned);
 }
 
 /**
  * Extract decisions, contradictions, pending items, and risks from documents.
- * Returns: { decisions: [{title, status, description, impact, owner, date}] }
  */
 export async function analyzeDecisions(apiKey, documentContext) {
-  const client = getClient(apiKey);
-  const res = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    temperature: 0.1,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content: `You are an expert EPC decision tracker. Analyze the provided project documents and extract every decision, pending action, contradiction, and risk.
+  const model = getModel(apiKey);
 
-Return ONLY valid JSON with this structure:
+  const prompt = `You are an expert EPC decision tracker. Analyze the provided project documents and extract every decision, pending action, contradiction, and risk.
+
+Return ONLY valid JSON (no markdown, no code blocks, just raw JSON) with this structure:
 {
   "decisions": [
     {
       "id": <number>,
       "title": "<short title>",
       "status": "<Approved | Pending | Contradiction | Risk>",
-      "description": "<what happened / what the issue is>",
+      "description": "<what happened or what the issue is>",
       "impact": "<business impact>",
       "owner": "<responsible person>",
       "date": "<date if mentioned, otherwise 'Not specified'>"
@@ -83,29 +71,30 @@ Look for:
 - Risks from delays, cost overruns, or unclear ownership
 - Action items assigned to specific people
 
-Be thorough. Extract ALL decisions and issues.`
-      },
-      {
-        role: 'user',
-        content: `Here are the uploaded project documents:\n\n${documentContext}`
-      }
-    ]
-  });
-  return JSON.parse(res.choices[0].message.content);
+Extract ALL decisions and issues found.
+
+Project Documents:
+${documentContext}`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+  return JSON.parse(cleaned);
 }
 
 /**
  * Chat with project memory — answers questions using document context.
  */
 export async function chatWithMemory(apiKey, documentContext, chatHistory, userMessage) {
-  const client = getClient(apiKey);
-  const res = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    temperature: 0.1,
-    messages: [
-      {
-        role: 'system',
-        content: `You are MERai, an expert AI copilot for EPC project teams. Answer questions accurately based ONLY on the provided document context.
+  const model = getModel(apiKey);
+
+  // Build conversation history for multi-turn chat
+  const history = chatHistory.map(m => ({
+    role: m.sender === 'user' ? 'user' : 'model',
+    parts: [{ text: m.text }]
+  }));
+
+  const systemContext = `You are MERai, an expert AI copilot for EPC project teams. Answer questions accurately based ONLY on the provided document context.
 
 Rules:
 - Be concise and professional.
@@ -114,14 +103,11 @@ Rules:
 - Never hallucinate or make up information.
 
 Document Context:
-${documentContext || '(No documents uploaded yet)'}`
-      },
-      ...chatHistory.map(m => ({
-        role: m.sender === 'user' ? 'user' : 'assistant',
-        content: m.text
-      })),
-      { role: 'user', content: userMessage }
-    ]
-  });
-  return res.choices[0].message.content;
+${documentContext || '(No documents uploaded yet)'}
+
+---`;
+
+  const chat = model.startChat({ history });
+  const result = await chat.sendMessage(`${chatHistory.length === 0 ? systemContext + '\n\n' : ''}${userMessage}`);
+  return result.response.text();
 }

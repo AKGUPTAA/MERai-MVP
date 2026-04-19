@@ -180,7 +180,7 @@ export default function HeroUpload({ apiKey, onUploadComplete, setDocumentContex
 
       <div className="mt-16 flex gap-8 text-slate-500 text-sm z-10 font-medium">
         <span className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-slate-400" /> Enterprise Grade Security</span>
-        <span className="flex items-center gap-2"><Zap className="w-5 h-5 text-slate-400" /> Powered by OpenAI</span>
+        <span className="flex items-center gap-2"><Zap className="w-5 h-5 text-slate-400" /> Powered by Gemini</span>
       </div>
     </div>
   );

@@ -65,7 +65,7 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
       {!apiKey && (
         <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <p className="text-sm font-medium">Please add your OpenAI API Key in the Settings (Sidebar) to enable the chat model.</p>
+          <p className="text-sm font-medium">Please add your Gemini API Key in the Settings (Sidebar) to enable the chat model.</p>
         </div>
       )}
 
@@ -132,7 +132,7 @@ export default function ProjectMemory({ apiKey, documentContext, fileNames }) {
           </form>
           <div className="text-center mt-3">
             <span className="text-[11px] text-slate-400 tracking-wide">
-              {!documentContext ? "Upload files on the main page to populate document context." : `${fileNames?.length || 0} file(s) loaded into memory.`} Powered by OpenAI.
+              {!documentContext ? "Upload files on the main page to populate document context." : `${fileNames?.length || 0} file(s) loaded into memory.`} Powered by Gemini.
             </span>
           </div>
         </div>
