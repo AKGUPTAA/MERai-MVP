@@ -1,0 +1,74 @@
+INTERNAL REFERENCE: Email fragments - Coastal Ammonia Export Terminal Project
+
+=============================================================
+FRAGMENT 1
+=============================================================
+
+From: Neha Kapoor <n.kapoor@meridianprojects.in>
+To: Karthik Iyer <k.iyer@meridianprojects.in>
+Subject: RE: Change order ageing report - April
+Date: Mon, 11 May 2026, 09:18 IST
+
+Karthik,
+
+28 change orders remain open beyond 21 days this month.
+
+Common pattern is unchanged:
+Design decisions made in coordination calls are not reflected in formal logs until procurement or construction escalates.
+
+Latest example:
+Jetty piping coating changed from standard epoxy to marine-grade system during client review on 21 April. Purchase request still shows old coating.
+
+Estimated impact if not corrected:
+- Rework cost: 22L INR
+- Delay: 3 weeks
+
+We need one source of truth for decisions.
+
+Neha
+=============================================================
+FRAGMENT 2
+=============================================================
+
+From: Rohit Menon <r.menon@meridianprojects.in>
+To: Project Team
+Subject: URGENT - Pump skid vendor mismatch
+Date: Wed, 13 May 2026, 15:42 IST
+
+Team,
+
+Approved vendor in March review was FlowTech.
+
+PO has been issued to HydroMech based on older approved vendor list.
+
+Vendor says fabrication slot will be lost if not clarified by tomorrow.
+
+Please confirm in writing:
+1. Correct vendor
+2. Approved capacity basis
+3. Whether PO amendment required
+
+Rohit
+=============================================================
+FRAGMENT 3
+=============================================================
+
+From: Aditi Rao <a.rao@meridianprojects.in>
+To: Karthik Iyer <k.iyer@meridianprojects.in>
+Subject: Handover issue - commissioning records missing
+Date: Fri, 15 May 2026, 18:05 IST
+
+Karthik,
+
+Client has rejected draft handover pack.
+
+Missing items:
+- signed loop check sheets
+- final calibration certificates
+- commissioning deviation closure log
+
+Engineering says documents exist across emails and local folders.
+
+No central index available.
+
+Aditi

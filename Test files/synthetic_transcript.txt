@@ -1,0 +1,38 @@
+MERIDIAN PROJECTS - WEEKLY REVIEW
+Project: Coastal Ammonia Export Terminal
+Date: 12 May 2026
+Platform: Teams Auto Transcript
+
+[14:01:10] PM: Let's begin with coating decision.
+
+[14:01:22] Engineering Lead: Standard epoxy will fail near shoreline. Recommend marine-grade system.
+
+[14:01:39] Client Rep: Agreed. Approve marine-grade coating.
+
+[14:01:51] Procurement: PR still uses epoxy. Need revision today.
+
+[14:02:08] PM: Noted as approved. Update immediately.
+
+[14:05:11] PM: Next, pump skid vendor.
+
+[14:05:26] SCM: Commercially HydroMech is lower cost.
+
+[14:05:39] Ops Lead: FlowTech has better reliability record.
+
+[14:05:52] Client Rep: We approved FlowTech in March, did we not?
+
+[14:06:04] PM: I don't see formal note. Keep this open till tomorrow.
+
+[14:10:33] PM: Firewater foundation?
+
+[14:10:42] Civil Lead: Rain disruption. Need 10 extra days.
+
+[14:11:01] PM: Submit revised recovery plan.
+
+[14:14:20] Client Rep: Handover pack last draft was incomplete.
+
+[14:14:31] Document Control: Calibration records are in separate mail trails.
+
+[14:14:48] Client Rep: Please issue one indexed dossier next week.
+
+[end]
